@@ -16,36 +16,38 @@ user:runtime_entry(start):-
 /* Plan działania: 
 1. Znajdowanie wszystkich ścieżek olewając kierunki i warunki
 2. Uwzględnienie kierunków
-3. Uwzględnienie rodzaju
-4. Wypisywanie długości
-5. Uwzględnienie długości
-6. Poprawne wypisywanie
-7. Niepowtarzające się wyniki
-8. Testy rocznikowe
+3. Wypisywanie długości
+
+4. Uwzględnienie rodzaju - tylko jeden możliwy 
+5. Uwzględnianie rodzaju - różne i żaden
+6. Uwzględnienie długości
+7. Obsługa stałej nil
+8. Obsługa wypisywania koniec
+9. Sprawdzanie poprawności wejścia
+10. Poprawne wypisywanie, przeanalizowanie treści
+11. Niepowtarzające się wyniki
+12. Testy rocznikowe
 */
     
 % funkcje pomocnicze
 
-% notmembertuple = not(member)
-notmembertuple((Elem1, Elem2), []).
-notmembertuple((Elem1, Elem2), [(Hd1, Hd2)|L]) :- ((Elem1 =\= Hd1); (Elem2 =\= Hd2)),  notmembertuple((Elem1, Elem2), L).
-
 % na razie olewamy warunki
-wyprawa_spelnia_warunki(Trasy, Start, Meta, Warunki) :- wyprawa(Trasy, Start, Meta). 
+wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa(Trasy, Start, Meta, D). 
  
  % na razie olewamy kierunki
  
-wyprawa(T, S, M) :- wyprawa(T, S, M, []).
-wyprawa([], X, X, Was).
-% wyprawa([Id], S, M, Was) :- trasa(Id, S, M, _R, _K, _D), nonmember((S, M), Was).
-wyprawa([Id|T], S, M, Was) :- trasa(Id, S, X, _R, _K, _D), nonmember((S, X), Was), wyprawa(T, X, M, [(S, X)|Was]).
+wyprawa(T, S, M, Dl) :- wyprawa(T, S, M, Dl, []).
+wyprawa([], X, X, 0, Was).
+% wyprawa([Id], S, M, D, Was) :- trasa(Id, S, M, _R, _K, D), nonmember((S, M), Was).
+wyprawa([Id|T], S, M, D, Was) :- trasa(Id, S, X, _R, _K, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, [(S, X)|Was]), D is (Dl + Dl1).
+wyprawa([Id|T], S, M, D, Was) :- trasa(Id, X, S, _R, oba, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, [(S, X)|Was]), D is (Dl + Dl1).
 
-wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, Warunki), wypisz_wyprawe(Trasy).
+wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), wypisz_wyprawe(Trasy, D).
 
-wypisz_wyprawe([]) :- write('\n').
-wypisz_wyprawe([Id|Trasy]) :- trasa(Id, Start, Meta, Rodzaj, Kierunek, Km), format('Id: ~p Trasa: ~p -> ~p ', [Id, Start, Meta]), wypisz_wyprawe(Trasy).
+wypisz_wyprawe([], D) :- format('Dlugosc: ~p \n', [D]).
+wypisz_wyprawe([Id|Trasy], D) :- trasa(Id, Start, Meta, Rodzaj, Kierunek, Km), format('Id: ~p Trasa: ~p -> ~p ', [Id, Start, Meta]), wypisz_wyprawe(Trasy, D).
 
-wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, Warunki) :- wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, Warunki), nl, fail.
+wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :- wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), nl, fail.
 
 
 % właściwe przetwarzanie
@@ -64,6 +66,6 @@ przetwarzaj :-
       format('Brak trasy z ~p do ~p.~n', [Start, Meta])
     ).*/
     (
-      wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, Warunki);
+      wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki);
       write('Brak trasy')
     ).
