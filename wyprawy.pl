@@ -21,15 +21,22 @@ user:runtime_entry(start):-
 5. Uwzględnienie rodzaju
 
 6. Uwzględnianie rodzaju - żaden podany
-7. Obsługa stałej nil
+7. Obsługa stałej nil - jako miejsce i jako warunki
 8. Obsługa wypisywania koniec
 9. Sprawdzanie poprawności wejścia
 10. Poprawne wypisywanie, przeanalizowanie treści
 11. Niepowtarzające się wyniki
 12. Testy rocznikowe
+13. Styl kodu - linijki do 80 znaków, wcięcia
+14. Komentarze
+15. Komentarz z nazwiskiem autora, prawidłowa nazwa
 */
     
 % funkcje pomocnicze
+
+nie_ma_rodzaju_w_warunkach([]).
+nie_ma_rodzaju_w_warunkach([rodzaj(_)|_]) :- fail.
+nie_ma_rodzaju_w_warunkach([X|T]) :- X \= rodzaj(_), nie_ma_rodzaju_w_warunkach(T).
 
 tuple_to_list((X, T), [X | L]) :- tuple_to_list(T, L).
 tuple_to_list(X, [X]) :- X \= (_, _).
@@ -50,8 +57,8 @@ wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa(Trasy, Start,
  
 wyprawa(T, S, M, D, W) :- wyprawa(T, S, M, D, W, []).
 wyprawa([], X, X, 0, _, _).
-wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, S, X, R, _K, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), member(rodzaj(R), War).
-wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, X, S, R, oba, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), member(rodzaj(R), War).
+wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, S, X, R, _K, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
+wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, X, S, R, oba, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
 
 wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), wypisz_wyprawe(Trasy, D).
 
