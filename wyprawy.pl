@@ -18,9 +18,9 @@ user:runtime_entry(start):-
 2. Uwzględnienie kierunków
 3. Wypisywanie długości
 4. Uwzględnienie długości
+5. Uwzględnienie rodzaju
 
-5. Uwzględnienie rodzaju - tylko jeden możliwy 
-6. Uwzględnianie rodzaju - różne i żaden
+6. Uwzględnianie rodzaju - żaden podany
 7. Obsługa stałej nil
 8. Obsługa wypisywania koniec
 9. Sprawdzanie poprawności wejścia
@@ -45,14 +45,13 @@ dlugosc_spelnia_warunki(_, []).
 dlugosc_spelnia_warunki(D, [dlugosc(War, K)|_]) :- dlugosc_spelnia_warunek(D, dlugosc(War, K)).
 dlugosc_spelnia_warunki(D, [rodzaj(_)|T]) :- dlugosc_spelnia_warunki(D, T).
 
-wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa(Trasy, Start, Meta, D), dlugosc_spelnia_warunki(D, Warunki). 
+wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa(Trasy, Start, Meta, D, Warunki), dlugosc_spelnia_warunki(D, Warunki). 
  
  
-wyprawa(T, S, M, D) :- wyprawa(T, S, M, D, []).
-wyprawa([], X, X, 0, _).
-% wyprawa([Id], S, M, D, Was) :- trasa(Id, S, M, _R, _K, D), nonmember((S, M), Was).
-wyprawa([Id|T], S, M, D, Was) :- trasa(Id, S, X, _R, _K, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, [(S, X)|Was]), D is (Dl + Dl1).
-wyprawa([Id|T], S, M, D, Was) :- trasa(Id, X, S, _R, oba, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, [(S, X)|Was]), D is (Dl + Dl1).
+wyprawa(T, S, M, D, W) :- wyprawa(T, S, M, D, W, []).
+wyprawa([], X, X, 0, _, _).
+wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, S, X, R, _K, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), member(rodzaj(R), War).
+wyprawa([Id|T], S, M, D, War, Was) :- trasa(Id, X, S, R, oba, Dl), nonmember((S, X), Was), wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), D is (Dl + Dl1), member(rodzaj(R), War).
 
 wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), wypisz_wyprawe(Trasy, D).
 
