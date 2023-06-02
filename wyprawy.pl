@@ -22,8 +22,8 @@ user:runtime_entry(start):-
 6. Uwzględnianie rodzaju - żaden podany
 7. nil jako warunki
 8. Nieprzerywanie po jednym zapytaniu 
-
 9. nil jako miejsce
+
 10. Obsługa wypisywania koniec
 11. Sprawdzanie poprawności wejścia
 12. Poprawne wypisywanie
@@ -153,13 +153,31 @@ wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :- 
 przetwarzaj :-
     write('Podaj miejsce startu: '),
     read(Start),
-    write('Podaj koniec: '),
-    read(Meta),
-    write('Podaj warunki: '),
-    read(Warunki),
     (
-      (tuple_to_list(Warunki, WarunkiTab),
-      wypisz_wszystkie_wyprawy_spelniajace_warunki(_Trasy, Start, Meta, _D, WarunkiTab));
-      write('Brak trasy \n')
-    ),
-    przetwarzaj.
+        Start == koniec -> 
+        write('Koniec programu. Milych wedrowek!\n');
+        (
+            write('Podaj koniec: '),
+            read(Meta),
+            (
+                Meta == koniec ->
+                write('Koniec programu. Milych wedrowek!\n');
+                (
+                    write('Podaj warunki: '),
+                    read(Warunki),
+                    (
+                        Warunki == koniec -> 
+                        write('Koniec programu. Milych wedrowek!\n');
+                        (
+                            (
+                            (tuple_to_list(Warunki, WarunkiTab),
+                            wypisz_wszystkie_wyprawy_spelniajace_warunki(_Trasy, Start, Meta, _D, WarunkiTab));
+                            write('Brak trasy \n')
+                            ),
+                            przetwarzaj
+                        )
+                    )
+                )
+            )
+        )
+    ).
