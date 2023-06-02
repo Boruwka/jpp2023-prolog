@@ -23,9 +23,9 @@ user:runtime_entry(start):-
 7. nil jako warunki
 8. Nieprzerywanie po jednym zapytaniu 
 9. nil jako miejsce
-
 10. Obsługa wypisywania koniec
 11. Sprawdzanie poprawności wejścia
+
 12. Poprawne wypisywanie
 13. Niepowtarzające się wyniki
 14. Testy rocznikowe
@@ -43,6 +43,16 @@ nie_ma_rodzaju_w_warunkach([X|T]) :- X \= rodzaj(_), nie_ma_rodzaju_w_warunkach(
 tuple_to_list((X, T), [X | L]) :- tuple_to_list(T, L).
 tuple_to_list(X, [X]) :- X \= (_, _).
 tuple_to_list(nil, []).
+
+sprawdz_warunki([]).
+sprawdz_warunki([rodzaj(R)|T]) :- sprawdz_warunki(T).
+sprawdz_warunki([dlugosc(War, K)|T]) :- sprawdz_warunki(T).
+sprawdz_warunki([X|T]) :- 
+    (X \= rodzaj(R)),
+    (X \= dlugosc(War, K)),
+    (X \= nil),
+    format('Bledny warunek: ~p\n', [X]),
+    fail.
 
 % dodaj_na_koniec(Elem, T, Res)
 % dodaje elem na koniec t zwraca w res
@@ -68,14 +78,14 @@ wyprawa(T, S, M, D, W) :- wyprawa(T, S, M, D, W, []).
 
 wyprawa([], nil, nil, 0, _, _).
 
-wyprawa([Id|T], nil, nil, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], nil, nil, D, War, Was) :- 
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, nil, Dl1, War, [(S, X)|Was]), 
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([Id|T], nil, nil, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], nil, nil, D, War, Was) :- 
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, nil, Dl1, War, [(S, X)|Was]), 
@@ -86,7 +96,7 @@ wyprawa([Id|T], nil, nil, D, War, Was) :-
 
 wyprawa([], _, nil, 0, _, _).
 
-wyprawa([Id|T], S, nil, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], S, nil, D, War, Was) :- 
     (X \= nil),
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
@@ -94,7 +104,7 @@ wyprawa([Id|T], S, nil, D, War, Was) :-
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([Id|T], S, nil, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], S, nil, D, War, Was) :- 
     (X \= nil),
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
@@ -111,7 +121,7 @@ wyprawa(L, nil, M, D, War, Was) :-
     nonmember((X, M), Was), 
     wyprawa(T, nil, X, Dl1, War, [(X, M)|Was]), 
     D is (Dl + Dl1),
-    dodaj_na_koniec(Id, T, L),
+    dodaj_na_koniec((Id, X, M), T, L),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
 wyprawa(L, nil, M, D, War, Was) :- 
@@ -119,21 +129,21 @@ wyprawa(L, nil, M, D, War, Was) :-
     nonmember((X, M), Was), 
     wyprawa(T, nil, X, Dl1, War, [(X, M)|Was]), 
     D is (Dl + Dl1),
-    dodaj_na_koniec(Id, T, L),
+    dodaj_na_koniec((Id, M, X), T, L),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
  
 % określone miejsce startu i końca
 
 wyprawa([], X, X, 0, _, _).
 
-wyprawa([Id|T], S, M, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], S, M, D, War, Was) :- 
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), 
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([Id|T], S, M, D, War, Was) :- 
+wyprawa([(Id, S, X)|T], S, M, D, War, Was) :- 
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), 
@@ -143,7 +153,7 @@ wyprawa([Id|T], S, M, D, War, Was) :-
 wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), wypisz_wyprawe(Trasy, D).
 
 wypisz_wyprawe([], D) :- format('Dlugosc: ~p \n', [D]).
-wypisz_wyprawe([Id|Trasy], D) :- trasa(Id, Start, Meta, _Rodzaj, _Kierunek, _Km), format('Id: ~p Trasa: ~p -> ~p ', [Id, Start, Meta]), wypisz_wyprawe(Trasy, D).
+wypisz_wyprawe([(Id, A, B)|Trasy], D) :- format('Id: ~p Trasa: ~p -> ~p ', [Id, A, B]), wypisz_wyprawe(Trasy, D).
 
 wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :- wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), nl, fail.
 
@@ -171,8 +181,9 @@ przetwarzaj :-
                         (
                             (
                             (tuple_to_list(Warunki, WarunkiTab),
+                            sprawdz_warunki(WarunkiTab),
                             wypisz_wszystkie_wyprawy_spelniajace_warunki(_Trasy, Start, Meta, _D, WarunkiTab));
-                            write('Brak trasy \n')
+                            write('Koniec tras\n')
                             ),
                             przetwarzaj
                         )
