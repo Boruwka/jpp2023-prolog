@@ -27,7 +27,6 @@ user:runtime_entry(start):-
 11. Sprawdzanie poprawności wejścia
 
 12. Poprawne wypisywanie
-13. Niepowtarzające się wyniki
 14. Testy rocznikowe
 15. Styl kodu - linijki do 80 znaków, wcięcia
 16. Komentarze
@@ -78,14 +77,14 @@ wyprawa(T, S, M, D, W) :- wyprawa(T, S, M, D, W, []).
 
 wyprawa([], nil, nil, 0, _, _).
 
-wyprawa([(Id, S, X)|T], nil, nil, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], nil, nil, D, War, Was) :- 
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, nil, Dl1, War, [(S, X)|Was]), 
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([(Id, S, X)|T], nil, nil, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], nil, nil, D, War, Was) :- 
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, nil, Dl1, War, [(S, X)|Was]), 
@@ -96,7 +95,7 @@ wyprawa([(Id, S, X)|T], nil, nil, D, War, Was) :-
 
 wyprawa([], _, nil, 0, _, _).
 
-wyprawa([(Id, S, X)|T], S, nil, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], S, nil, D, War, Was) :- 
     (X \= nil),
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
@@ -104,7 +103,7 @@ wyprawa([(Id, S, X)|T], S, nil, D, War, Was) :-
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([(Id, S, X)|T], S, nil, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], S, nil, D, War, Was) :- 
     (X \= nil),
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
@@ -121,7 +120,7 @@ wyprawa(L, nil, M, D, War, Was) :-
     nonmember((X, M), Was), 
     wyprawa(T, nil, X, Dl1, War, [(X, M)|Was]), 
     D is (Dl + Dl1),
-    dodaj_na_koniec((Id, X, M), T, L),
+    dodaj_na_koniec((Id, X, M, R), T, L),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
 wyprawa(L, nil, M, D, War, Was) :- 
@@ -129,21 +128,21 @@ wyprawa(L, nil, M, D, War, Was) :-
     nonmember((X, M), Was), 
     wyprawa(T, nil, X, Dl1, War, [(X, M)|Was]), 
     D is (Dl + Dl1),
-    dodaj_na_koniec((Id, M, X), T, L),
+    dodaj_na_koniec((Id, M, X, R), T, L),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
  
 % określone miejsce startu i końca
 
 wyprawa([], X, X, 0, _, _).
 
-wyprawa([(Id, S, X)|T], S, M, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], S, M, D, War, Was) :- 
     trasa(Id, S, X, R, _K, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), 
     D is (Dl + Dl1),
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
     
-wyprawa([(Id, S, X)|T], S, M, D, War, Was) :- 
+wyprawa([(Id, S, X, R)|T], S, M, D, War, Was) :- 
     trasa(Id, X, S, R, oba, Dl), 
     nonmember((S, X), Was), 
     wyprawa(T, X, M, Dl1, War, [(S, X)|Was]), 
@@ -152,8 +151,9 @@ wyprawa([(Id, S, X)|T], S, M, D, War, Was) :-
 
 wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), wypisz_wyprawe(Trasy, D).
 
-wypisz_wyprawe([], D) :- format('Dlugosc: ~p \n', [D]).
-wypisz_wyprawe([(Id, A, B)|Trasy], D) :- format('Id: ~p Trasa: ~p -> ~p ', [Id, A, B]), wypisz_wyprawe(Trasy, D).
+wypisz_wyprawe([], D) :- format('Dlugosc: ~p\n', [D]).
+wypisz_wyprawe([(Id, A, B, R)], D) :- format('~p -(~p, ~p)-> ~p\n', [A, Id, R, B]), wypisz_wyprawe([], D).
+wypisz_wyprawe([(Id, A, B, R)|Trasy], D) :- (Trasy \= []), format('~p -(~p, ~p)-> ', [A, Id, R]), wypisz_wyprawe(Trasy, D).
 
 wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :- wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), nl, fail.
 
