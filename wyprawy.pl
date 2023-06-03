@@ -1,3 +1,5 @@
+% Jagoda Bracha
+
 :- ensure_loaded(library(lists)).
 
 user:runtime_entry(start):-
@@ -13,57 +15,55 @@ user:runtime_entry(start):-
 	write('Incorrect usage, use: program <file>\n')
     ).
     
-/* Plan działania: 
-1. Znajdowanie wszystkich ścieżek olewając kierunki i warunki
-2. Uwzględnienie kierunków
-3. Wypisywanie długości
-4. Uwzględnienie długości
-5. Uwzględnienie rodzaju
-6. Uwzględnianie rodzaju - żaden podany
-7. nil jako warunki
-8. Nieprzerywanie po jednym zapytaniu 
-9. nil jako miejsce
-10. Obsługa wypisywania koniec
-11. Sprawdzanie poprawności wejścia
-12. Poprawne wypisywanie
-
-14. Testy rocznikowe
-15. Bug z potrójnymi rodzajami (query zakopane brzeziny rodzaj(rower), rodzaj(rower), dlugosc(eq, 55), rodzaj(rower))
-15. Styl kodu - linijki do 80 znaków, wcięcia
-16. Komentarze
-17. Komentarz z nazwiskiem autora, prawidłowa nazwa
-*/
     
 % funkcje pomocnicze
 
+% jest prawdą, jeśli w tablicy Warunków nie występuje element postaci rodzaj(R)
 nie_ma_rodzaju_w_warunkach([]).
 nie_ma_rodzaju_w_warunkach([rodzaj(_)|_]) :- fail.
-nie_ma_rodzaju_w_warunkach([X|T]) :- X \= rodzaj(_), nie_ma_rodzaju_w_warunkach(T).
+nie_ma_rodzaju_w_warunkach([X|T]) :- 
+    X \= rodzaj(_), 
+    nie_ma_rodzaju_w_warunkach(T).
 
+% tuple_to_list(T, L) przerabia krotkę T na listę L
 tuple_to_list((X, T), [X | L]) :- tuple_to_list(T, L).
 tuple_to_list(X, [X]) :- X \= (_, _).
 tuple_to_list(nil, []).
 
+
+% sprawdza, czy warunek jest poprawny 
+dobry_warunek(dlugosc(eq, K)) :- (K \= (_,_)).
+dobry_warunek(dlugosc(le, K)) :- (K \= (_,_)).
+dobry_warunek(dlugosc(lt, K)) :- (K \= (_,_)).
+dobry_warunek(dlugosc(ge, K)) :- (K \= (_,_)).
+dobry_warunek(dlugosc(gt, K)) :- (K \= (_,_)).
+dobry_warunek(rodzaj(R)) :- (R \= (_, _)).
+dobry_warunek(nil).
+
+% sprawdza, czy tablica warunków zawiera jedynie poprawne warunki
 sprawdz_warunki([]).
-sprawdz_warunki([rodzaj(_)|T]) :- sprawdz_warunki(T).
-sprawdz_warunki([dlugosc(_, _)|T]) :- sprawdz_warunki(T).
+sprawdz_warunki([X|T]) :- dobry_warunek(X), sprawdz_warunki(T).
 sprawdz_warunki([X|_]) :- 
-    (X \= rodzaj(_)),
-    (X \= dlugosc(_, _)),
-    (X \= nil),
-    format('Bledny warunek: ~p\n', [X]),
+    \+ dobry_warunek(X),
+    format('Error: niepoprawny warunek - ~p\n', [X]),
     fail.
     
-% usun_duplikaty(Tab, TabBezDuplikatow)
+% first_member(E, L) zwraca to co member,
+% ale tylko raz nawet jeśli E występuje wiele razy w liście.
+first_member(_, []) :- fail.
+first_member(E, [H|_]) :- (E == H).
+first_member(E, [H|T]) :- (E \= H), first_member(E, T).
+    
+% usun_duplikaty(Tab, TabBezDuplikatow) 
+% usuwa z Tab powtarzające się elementy.
 usun_duplikaty([], []).
 usun_duplikaty([H|T], [H|L]) :- nonmember(H, T), usun_duplikaty(T, L).
 usun_duplikaty([H|T], L) :- 
-    member(H, T), 
-    % format('usunelismy ~p z listy ~p\n', [H, T]), 
+    first_member(H, T),
     usun_duplikaty(T, L).
 
 % dodaj_na_koniec(Elem, T, Res)
-% dodaje elem na koniec t zwraca w res
+% dodaje Elem na koniec T i zwraca wynik w Res
 dodaj_na_koniec(Elem, [], [Elem]).
 dodaj_na_koniec(Elem, [Hd|Tl], [Hd|Restl]) :- dodaj_na_koniec(Elem, Tl, Restl).
 
@@ -73,12 +73,20 @@ dlugosc_spelnia_warunek(D, dlugosc(le, K)) :- (D =< K).
 dlugosc_spelnia_warunek(D, dlugosc(gt, K)) :- (D > K).
 dlugosc_spelnia_warunek(D, dlugosc(ge, K)) :- (D >= K).
 
+% sprawdza, czy wyprawa podanej długości spełnia warunki z tablicy
 
 dlugosc_spelnia_warunki(_, []).
-dlugosc_spelnia_warunki(D, [dlugosc(War, K)|_]) :- dlugosc_spelnia_warunek(D, dlugosc(War, K)).
-dlugosc_spelnia_warunki(D, [rodzaj(_)|T]) :- dlugosc_spelnia_warunki(D, T).
 
-wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa(Trasy, Start, Meta, D, Warunki), dlugosc_spelnia_warunki(D, Warunki). 
+dlugosc_spelnia_warunki(D, [dlugosc(War, K)|_]) :- 
+    dlugosc_spelnia_warunek(D, dlugosc(War, K)).
+    
+dlugosc_spelnia_warunki(D, [rodzaj(_)|T]) :- 
+    dlugosc_spelnia_warunki(D, T).
+
+
+wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- 
+    wyprawa(Trasy, Start, Meta, D, Warunki), 
+    dlugosc_spelnia_warunki(D, Warunki). 
 
 wyprawa(T, S, M, D, W) :- wyprawa(T, S, M, D, W, []).
 
@@ -158,16 +166,30 @@ wyprawa([(Id, S, X, R)|T], S, M, D, War, Was) :-
     D is (Dl + Dl1), 
     (member(rodzaj(R), War) ; nie_ma_rodzaju_w_warunkach(War)).
 
-wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :- wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), (D > 0), wypisz_wyprawe(Trasy, D).
+wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki) :-
+    wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), 
+    (D > 0), 
+    wypisz_wyprawe(Trasy, D).
 
-wypisz_wyprawe([], D) :- format('Dlugosc trasy: ~p.\n', [D]).
-wypisz_wyprawe([(Id, A, B, R)], D) :- format('~p -(~p,~p)-> ~p\n', [A, Id, R, B]), wypisz_wyprawe([], D).
-wypisz_wyprawe([(Id, A, B, R)|Trasy], D) :- (Trasy \= []), format('~p -(~p,~p)-> ', [A, Id, R]), wypisz_wyprawe(Trasy, D).
 
-wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :- wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), nl, fail.
+wypisz_wyprawe([], D) :- 
+    format('Dlugosc trasy: ~p.\n', [D]).
+    
+wypisz_wyprawe([(Id, A, B, R)], D) :- 
+    format('~p -(~p,~p)-> ~p\n', [A, Id, R, B]), 
+    wypisz_wyprawe([], D).
+    
+wypisz_wyprawe([(Id, A, _, R)|Trasy], D) :- 
+    (Trasy \= []), 
+    format('~p -(~p,~p)-> ', [A, Id, R]), 
+    wypisz_wyprawe(Trasy, D).
+
+wypisz_wszystkie_wyprawy_spelniajace_warunki(Trasy, Start, Meta, D, Warunki) :-
+    wypisz_wyprawa_spelnia_warunki(Trasy, Start, Meta, D, Warunki), nl, fail.
 
 
 % właściwe przetwarzanie
+
 
 przetwarzaj :-
     write('Podaj miejsce startu: '),
@@ -189,10 +211,10 @@ przetwarzaj :-
                         Warunki == koniec -> 
                         write('Koniec programu. Milych wedrowek!\n');
                         (
-                            (tuple_to_list(Warunki, WarunkiTab),
-                            usun_duplikaty(WarunkiTab, WarunkiTabBezDuplikatow),
+                            
+			    (tuple_to_list(Warunki, WarunkiTab),
                             sprawdz_warunki(WarunkiTab),
-                            % format('bedziemy wypisywac wyprawy z warunkami ~p\n', [WarunkiTabBezDuplikatow]),
+                            usun_duplikaty(WarunkiTab, WarunkiTabBezDuplikatow),
                             wypisz_wszystkie_wyprawy_spelniajace_warunki(_Trasy, Start, Meta, _D, WarunkiTabBezDuplikatow));
                             przetwarzaj
                         )
